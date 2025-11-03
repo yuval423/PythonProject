@@ -2,36 +2,44 @@
 author - yuval agami
 date   - 1.11.25
 """
-#יבוא מודלים
 import socket
 import struct
-#הגדרת קבועים
+
 SERVER_IP = '127.0.0.1'
-SERVER_PORT = 20017
+SERVER_PORT = 21112
 HEADER_LEN = 2
 
-def main():# יצירת socket חדש
+
+def recv_answer(sock):
+    # receive 2 bytes of length and then the message
+    net_len = sock.recv(HEADER_LEN)
+    packet_len = socket.ntohs(struct.unpack('H', net_len)[0])
+    return sock.recv(packet_len).decode()
+
+
+def main():  # create a new socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
         client_socket.connect((SERVER_IP, SERVER_PORT))
 
-        while True:#קליטת הודעה
+        while True:  # get message
             msg = input("Enter message: ")
             client_socket.send(msg.encode())
-            net_len = client_socket.recv(HEADER_LEN)#קבלת 2 בייטים מהשרת פירוק stuct H
-            packet_len = socket.ntohs(struct.unpack('H', net_len)[0])
-            answer = client_socket.recv(packet_len).decode()#פיענוך ההודעה ולהדפיס אותה
+
+            # get answer
+            answer = recv_answer(client_socket)
             print(answer)
 
+            # if answer is bye break
             if answer.strip().upper() == "BYE":
-                break# אם ההודעה היא ביי אז לצאת מהלולאה
+                break
 
-    except socket.error as msg:#תפיסת שגיאה
+    except socket.error as msg:  # error handling
         print(msg)
 
     finally:
-        client_socket.close()#סגירת הסוקט
+        client_socket.close()  # close the socket
 
 
 if __name__ == '__main__':

@@ -4,48 +4,67 @@ import datetime
 import random
 
 IP = '0.0.0.0'
-PORT = 20017
+PORT = 21112
 QUEUE_SIZE = 1
 MAX_PACKET = 4
 LEN_SIGN = 'H'
 
 
-def main():#האזנה ללקוח קישור לפורט ויצירת סוקט
+def get_answer(command):
+    # decide what to answer for every command
+    if command == "":
+        return "invalid"
+    if command == "TIME":
+        return datetime.datetime.now().strftime("%H:%M:%S")
+    elif command == "NAME":
+        return "YUVAL"
+    elif command == "RAND":
+        return str(random.randint(1, 10))
+    elif command == "EXIT":
+        return "bye"
+    else:
+        return "invalid"
+
+
+def send_with_length(sock, msg):
+    # sends length and then the message
+    packet_len = socket.htons(len(msg))
+    sock.send(struct.pack(LEN_SIGN, packet_len))
+    sock.send(msg.encode())
+
+
+def main():
+    # create server socket and listen for clients
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((IP, PORT))
     server_socket.listen(QUEUE_SIZE)
 
     while True:
-        try:#לולאה שמקבלת קליינט חדש כל פעם
+        try:
+            # accept a new client
             comm_socket, client_address = server_socket.accept()
 
-            while True:#לולאה פנימית מקבלת פקודה מהקליינט שעכשיו
-                request = comm_socket.recv(MAX_PACKET).decode().strip()
-#בדיקת הפקודה ושלחת התשובה המתאימה לפקודה
-                if request == "TIME":
-                    answer = datetime.datetime.now().strftime("%H:%M:%S")
-                elif request == "NAME":
-                    answer = "YUVAL"
-                elif request == "RAND":
-                    answer = str(random.randint(1, 10))
-                elif request == "EXIT":
-                    answer = "bye"
-                else:
-                    answer = "invalid"
-#שליחת אורך ההודעה ואז שליחת ההודעה עצמה
-                packet_len = socket.htons(len(answer))
-                comm_socket.send(struct.pack(LEN_SIGN, packet_len))
-                comm_socket.send(answer.encode())
+            while True:
+                # get command from client
+                data = comm_socket.recv(MAX_PACKET).decode().strip()
 
-                if answer == "bye":#יציאה מהלולאה הפנימית שהקליינט רושם EXIT
+                # get response for command
+                answer = get_answer(data)
+
+                # send answer
+                send_with_length(comm_socket, answer)
+
+                # if commend = EXIT we stop serving this client
+                if answer == "bye":
                     break
 
-        except socket.error as msg:#קליטת שגיאות
+        except socket.error as msg:
+            # error handling
             print("server socket error:", msg)
 
-        finally:#סגירת החיבור של הקליינט הנוכחי וחוזרים ללולאה הראשית שמקבלת קליינט חדש
+        finally:
+            # close this client's socket
             comm_socket.close()
-
 
 
 if __name__ == '__main__':
