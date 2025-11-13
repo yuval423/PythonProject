@@ -59,7 +59,7 @@ def main():
                     break
 
         except socket.error as msg:
-            # error handling
+            # error handlingn
             print("server socket error:", msg)
 
         finally:
