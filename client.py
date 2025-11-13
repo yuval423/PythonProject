@@ -35,7 +35,7 @@ def main():  # create a new socket
             if answer.strip().upper() == "BYE":
                 break
 
-    except socket.error as msg:  # error handlingn
+    except socket.error as msg:  # error handling
         print(msg)
 
     finally:
